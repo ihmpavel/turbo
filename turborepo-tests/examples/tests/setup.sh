@@ -56,3 +56,5 @@ git ${GIT_ARGS} config user.email "turbo-test@example.com"
 git ${GIT_ARGS} config user.name "Turbo Test"
 git ${GIT_ARGS} add .
 git ${GIT_ARGS} commit -m "Initial" --quiet
+# Second arg passed is false, which will skip the npm install in setup_git.sh
+"${SCRIPT_DIR}/../cli/integration_tests/setup_git.sh" "${TARGET_DIR}" "false"
