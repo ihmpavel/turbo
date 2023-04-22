@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
 import chalk from "chalk";
-import { Command } from "commander";
+import { Command, Option } from "commander";
 import notifyUpdate from "./utils/notifyUpdate";
 import { turboGradient, error } from "./logger";
 
-import { create } from "./commands";
+import { create, add } from "./commands";
 import cliPkg from "../package.json";
 
 const createTurboCli = new Command();
@@ -14,7 +14,11 @@ const createTurboCli = new Command();
 createTurboCli
   .name(chalk.bold(turboGradient("create-turbo")))
   .description("Create a new Turborepo")
-  .usage(`${chalk.bold("<project-directory> <package-manager>")} [options]`)
+  .version(cliPkg.version, "-v, --version", "output the current version")
+  .usage(`${chalk.bold("<project-directory> <package-manager>")} [options]`);
+
+createTurboCli
+  .command("create", { isDefault: true })
   .argument("[project-directory]")
   .argument("[package-manager]")
   .option(
@@ -45,8 +49,18 @@ createTurboCli
 `
   )
   .version(cliPkg.version, "-v, --version", "output the current version")
-  .helpOption()
   .action(create);
+
+createTurboCli
+  .command("add")
+  .argument("[project-directory]")
+  .argument("[name]")
+  .addOption(
+    new Option("--type <type>", "Type of generator to run")
+      .choices(["blank", "copy", "external", "custom"])
+      .default("blank")
+  )
+  .action(add);
 
 createTurboCli
   .parseAsync()

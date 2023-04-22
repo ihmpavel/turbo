@@ -38,12 +38,15 @@
     "update-check": "^1.5.4"
   },
   "devDependencies": {
+    "@turbo/test-utils": "workspace:*",
+    "@turbo/tsconfig": "workspace:*",
+    "@turbo/utils": "workspace:*",
     "@turbo/workspaces": "workspace:*",
     "@types/async-retry": "^1.4.5",
     "@types/cross-spawn": "^6.0.2",
     "@types/fs-extra": "^9.0.13",
     "@types/gradient-string": "^1.1.2",
-    "@types/inquirer": "^7.3.1",
+    "@types/inquirer": "^8.2.5",
     "@types/jest": "^27.4.0",
     "@types/node": "^16.11.12",
     "@types/rimraf": "^3.0.2",
@@ -51,12 +54,10 @@
     "@types/tar": "^6.1.4",
     "eslint": "^7.23.0",
     "jest": "^27.4.3",
+    "node-plop": "^0.26.3",
     "strip-ansi": "^6.0.1",
     "ts-jest": "^27.1.1",
-    "@turbo/tsconfig": "workspace:*",
     "tsup": "^5.10.3",
-    "@turbo/utils": "workspace:*",
-    "@turbo/test-utils": "workspace:*",
     "typescript": "^4.5.5"
   },
   "files": [
