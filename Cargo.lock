@@ -8861,6 +8861,7 @@ dependencies = [
 name = "turbopath"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "path-slash",
  "serde",
  "thiserror",
@@ -8887,8 +8888,20 @@ dependencies = [
  "prost",
  "prost-build",
  "thiserror",
+ "turbopath",
+ "turborepo-fs",
  "turborepo-lockfiles",
  "turborepo-scm",
+]
+
+[[package]]
+name = "turborepo-fs"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "tempfile",
+ "turbopath",
+ "walkdir",
 ]
 
 [[package]]

@@ -2,12 +2,16 @@ use std::{
     borrow::Cow,
     ffi::OsStr,
     fmt,
+    fs::{self, Metadata},
+    io::{self, Write},
     path::{Components, Path, PathBuf},
 };
 
 use serde::Serialize;
 
-use crate::{AnchoredSystemPathBuf, IntoSystem, PathValidationError, RelativeSystemPathBuf};
+use crate::{
+    AnchoredSystemPathBuf, IntoSystem, PathError, PathValidationError, RelativeSystemPathBuf,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Serialize)]
 pub struct AbsoluteSystemPathBuf(PathBuf);
@@ -143,6 +147,65 @@ impl AbsoluteSystemPathBuf {
         AbsoluteSystemPathBuf(self.0.join(path.as_path()))
     }
 
+    pub fn join_literal(&self, segment: &str) -> Self {
+        AbsoluteSystemPathBuf(self.0.join(Path::new(segment)))
+    }
+
+    pub fn ensure_dir(&self) -> Result<(), io::Error> {
+        if let Some(parent) = self.0.parent() {
+            fs::create_dir_all(parent)
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn remove(&self) -> Result<(), io::Error> {
+        fs::remove_file(self.0.as_path())
+    }
+
+    pub fn set_readonly(&self) -> Result<(), io::Error> {
+        let mut perms = self.metadata()?.permissions();
+        perms.set_readonly(true);
+        fs::set_permissions(self.0.as_path(), perms)
+    }
+
+    pub fn is_readonly(&self) -> Result<bool, io::Error> {
+        Ok(self.metadata()?.permissions().readonly())
+    }
+
+    pub fn symlink_to_file<P: AsRef<Path>>(&self, to: P) -> Result<(), PathError> {
+        let system_path = to.as_ref();
+        let system_path = system_path.into_system()?;
+        #[cfg(windows)]
+        return Ok(std::os::windows::fs::symlink_file(
+            &system_path,
+            self.0.as_path(),
+        )?);
+
+        #[cfg(not(windows))]
+        return Ok(std::os::unix::fs::symlink(&system_path, self.0.as_path())?);
+    }
+
+    pub fn symlink_to_dir<P: AsRef<Path>>(&self, to: P) -> Result<(), PathError> {
+        let system_path = to.as_ref();
+        let system_path = system_path.into_system()?;
+        #[cfg(windows)]
+        return Ok(std::os::windows::fs::symlink_dir(to)?);
+
+        #[cfg(not(windows))]
+        return Ok(std::os::unix::fs::symlink(&system_path, self.0.as_path())?);
+    }
+
+    pub fn read_symlink(&self) -> Result<PathBuf, io::Error> {
+        fs::read_link(self.0.as_path())
+    }
+
+    pub fn create_with_contents(&self, contents: &str) -> Result<(), io::Error> {
+        let mut f = fs::File::create(self.0.as_path())?;
+        write!(f, "{}", contents)?;
+        Ok(())
+    }
+
     pub fn to_str(&self) -> Result<&str, PathValidationError> {
         self.0
             .to_str()
@@ -163,6 +226,20 @@ impl AbsoluteSystemPathBuf {
 
     pub fn extension(&self) -> Option<&OsStr> {
         self.0.extension()
+    }
+
+    pub fn metadata(&self) -> io::Result<Metadata> {
+        fs::symlink_metadata(&self.0)
+    }
+
+    // note that this is *not* lstat. If this is a symlink, it
+    // will return metadata for the target.
+    pub fn stat(&self) -> io::Result<Metadata> {
+        fs::metadata(&self.0)
+    }
+
+    pub fn open(&self) -> io::Result<fs::File> {
+        fs::File::open(&self.0)
     }
 }
 

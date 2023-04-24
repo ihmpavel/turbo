@@ -1,5 +1,5 @@
 [package]
-name = "turbopath"
+name = "turborepo-fs"
 version = "0.1.0"
 license = "MPL-2.0"
 edition = "2021"
@@ -8,7 +8,8 @@ edition = "2021"
 
 [dependencies]
 anyhow = { workspace = true }
-path-slash = "0.2.1"
-# TODO: Make this a crate feature
-serde = { workspace = true }
-thiserror = { workspace = true }
+turbopath = { workspace = true }
+walkdir = "2.3.3"
+
+[dev-dependencies]
+tempfile = { workspace = true }
