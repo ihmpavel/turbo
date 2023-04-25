@@ -47,6 +47,9 @@ use crate::{
 };
 
 pub struct DaemonServer<T: Watcher> {
+    /// The repo we are watching
+    repo_root: AbsoluteSystemPathBuf,
+    /// The root of the daemon files
     daemon_root: AbsoluteSystemPathBuf,
     log_file: AbsoluteSystemPathBuf,
 
@@ -77,6 +80,7 @@ impl DaemonServer<notify::RecommendedWatcher> {
         log_file: AbsoluteSystemPathBuf,
     ) -> Result<Self, DaemonError> {
         let daemon_root = base.daemon_file_root();
+        let repo_root = base.repo_root.clone();
 
         let watcher = Arc::new(HashGlobWatcher::new(
             AbsoluteSystemPathBuf::new(base.repo_root.clone()).expect("valid repo root"),
@@ -89,6 +93,7 @@ impl DaemonServer<notify::RecommendedWatcher> {
         let (send_shutdown, recv_shutdown) = tokio::sync::oneshot::channel::<()>();
 
         Ok(Self {
+            repo_root,
             daemon_root,
             log_file,
 
@@ -112,10 +117,10 @@ impl<T: Watcher> Drop for DaemonServer<T> {
 
 impl<T: Watcher + Send + 'static> DaemonServer<T> {
     /// Serve the daemon server, while also watching for filesystem changes.
-    pub async fn serve(mut self, repo_root: AbsoluteSystemPathBuf) -> CloseReason {
+    pub async fn serve(mut self) -> CloseReason {
         let stop = StopSource::new();
         let watcher = self.watcher.clone();
-        let watcher_fut = watcher.watch(repo_root.as_path().to_owned(), stop.token());
+        let watcher_fut = watcher.watch(self.repo_root.as_path().to_owned(), stop.token());
 
         let timer = self.timeout.clone();
         let timeout_fut = timer.wait();
@@ -309,7 +314,11 @@ mod test {
     #[tracing_test::traced_test]
     async fn lifecycle() {
         let tempdir = tempfile::tempdir().unwrap();
+
         let path = AbsoluteSystemPathBuf::new(tempdir.path()).unwrap();
+        let logs = path.join_relative(RelativeSystemPathBuf::new("turbo.log").unwrap());
+        let pid_path = path.join_relative(RelativeSystemPathBuf::new("turbod.pid").unwrap());
+        let sock_path = path.join_relative(RelativeSystemPathBuf::new("turbod.sock").unwrap());
 
         tracing::info!("start");
 
@@ -318,22 +327,19 @@ mod test {
                 Args {
                     ..Default::default()
                 },
-                path.as_path().to_path_buf(),
+                path,
                 "test",
             )
             .unwrap(),
             Duration::from_secs(60 * 60),
-            path.clone(),
+            logs,
         )
         .unwrap();
 
         tracing::info!("server started");
 
-        let pid_path = path.join_relative(RelativeSystemPathBuf::new("turbod.pid").unwrap());
-        let sock_path = path.join_relative(RelativeSystemPathBuf::new("turbod.sock").unwrap());
-
         select! {
-            _ = daemon.serve(path) => panic!("must not close"),
+            _ = daemon.serve() => panic!("must not close"),
             _ = tokio::time::sleep(Duration::from_millis(10)) => (),
         }
 
@@ -358,7 +364,7 @@ mod test {
                 Args {
                     ..Default::default()
                 },
-                path.as_path().to_path_buf(),
+                path.clone(),
                 "test",
             )
             .unwrap(),
@@ -370,15 +376,15 @@ mod test {
         let pid_path = path.join_relative(RelativeSystemPathBuf::new("turbod.pid").unwrap());
 
         let now = Instant::now();
-        let close_reason = daemon.serve(path).await;
+        let close_reason = daemon.serve().await;
 
         assert!(
             now.elapsed() >= Duration::from_millis(5),
             "must wait at least 5ms"
         );
         assert_matches::assert_matches!(
-            super::CloseReason::Timeout,
             close_reason,
+            super::CloseReason::Timeout,
             "must close due to timeout"
         );
         assert!(!pid_path.exists(), "pid file must be deleted");
