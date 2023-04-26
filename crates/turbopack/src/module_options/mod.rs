@@ -78,6 +78,7 @@ impl ModuleOptionsVc {
             preset_env_versions,
             ref custom_ecmascript_app_transforms,
             ref custom_ecmascript_transforms,
+            ref custom_ecma_transform_plugins,
             ref custom_rules,
             execution_context,
             ref rules,
@@ -92,7 +93,30 @@ impl ModuleOptionsVc {
                 }
             }
         }
-        let mut transforms = custom_ecmascript_app_transforms.clone();
+
+        let (before_transform_plugins, after_transform_plugins) =
+            if let Some(transform_plugins) = custom_ecma_transform_plugins {
+                let transform_plugins = transform_plugins.await?;
+                (
+                    transform_plugins
+                        .before
+                        .iter()
+                        .cloned()
+                        .map(|plugin| EcmascriptInputTransform::Plugin(plugin))
+                        .collect(),
+                    transform_plugins
+                        .after
+                        .iter()
+                        .cloned()
+                        .map(|plugin| EcmascriptInputTransform::Plugin(plugin))
+                        .collect(),
+                )
+            } else {
+                (vec![], vec![])
+            };
+
+        let mut transforms = before_transform_plugins;
+        transforms.extend(custom_ecmascript_app_transforms.iter().cloned());
         transforms.extend(custom_ecmascript_transforms.iter().cloned());
 
         // Order of transforms is important. e.g. if the React transform occurs before
@@ -180,6 +204,7 @@ impl ModuleOptionsVc {
                     .iter()
                     .cloned()
                     .chain(transforms.iter().cloned())
+                    .chain(after_transform_plugins.iter().cloned())
                     .collect(),
             )
         } else {
@@ -200,6 +225,7 @@ impl ModuleOptionsVc {
             .iter()
             .cloned()
             .chain(transforms.iter().cloned())
+            .chain(after_transform_plugins.iter().cloned())
             .collect(),
         );
 
@@ -220,6 +246,7 @@ impl ModuleOptionsVc {
             .iter()
             .cloned()
             .chain(transforms.iter().cloned())
+            .chain(after_transform_plugins.iter().cloned())
             .collect(),
         );
 
