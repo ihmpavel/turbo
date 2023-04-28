@@ -36,6 +36,7 @@ fi
 
 echo "No arguments provided, running all tests"
 if [ "$PRYSK_SERIAL" == "true" ]; then
+  echo "Running example tests serially"
   .cram_env/bin/prysk --shell="$(which bash)" "tests"
 else
   echo "Running example tests in parallel"
