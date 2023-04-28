@@ -95,8 +95,9 @@ Then from the root directory, you can run:
   ```
 - Example tests
   ```bash
-  pnpm test -- --filter=turborepo-tests-examples -- <example-name> <packagemanager>
+  pnpm test -- --filter=turborepo-tests-examples
   ```
+  You can run these test serially by setting the `PRYSK_SERIAL=true` environment variable.
 
 ## Debugging Turborepo
 

@@ -1,13 +1,19 @@
 #!/bin/bash
 set -e
 
-## Usage
-# ./scripts/run-examples <folder-name> <package-manager>
-# Examples
-# ./scripts/run-examples basic yarn
-
-## Or run all tests without any arguments
-# ./scripts/run-examples
+#### Usage
+# Run all tests in parallel
+# ./run-example.sh
+#
+#
+# Or run all tests serially
+# ./run-example.sh
+#
+#
+# Run a single test
+# ./run-example.sh <folder-name> <package-manager>
+# Example:
+# ./run-example.sh basic yarn
 
 # Setup prysk
 python3 -m venv .cram_env
