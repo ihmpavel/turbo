@@ -16,8 +16,10 @@ set -e
 # ./run-example.sh basic yarn
 
 # Setup prysk
+echo "Setting up virtualenv..."
 python3 -m venv .cram_env
 
+echo "Setting up pip..."
 .cram_env/bin/python3 -m pip install --quiet --upgrade pip
 echo "Installing prysk..."
 .cram_env/bin/pip3 install --quiet prysk
