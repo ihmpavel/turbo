@@ -36,9 +36,9 @@ fi
 
 echo "No arguments provided, running all tests"
 if [ "$PRYSK_SERIAL" == "true" ]; then
-  .cram_env/bin/prysk --shell="$(which bash)" "$PWD/examples_tests/"
+  .cram_env/bin/prysk --shell="$(which bash)" "tests"
 else
   echo "Running example tests in parallel"
   .cram_env/bin/pip3 install --quiet pytest "prysk[pytest-plugin]" pytest-xdist
-  .cram_env/bin/pytest -n auto --prysk-shell="$(which bash)" "$PWD/examples_tests/"
+  .cram_env/bin/pytest -n auto --prysk-shell="$(which bash)" "tests"
 fi
